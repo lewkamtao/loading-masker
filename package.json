@@ -1,0 +1,41 @@
+{
+  "name": "loading-masker",
+  "version": "1.0.0",
+  "private": false,
+  "description": "A smart loading mask layer library with DOM-based auto-closing conditions",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsdown --minify",
+    "dev": "tsdown --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [
+    "loading",
+    "mask",
+    "overlay",
+    "dom",
+    "mutation-observer",
+    "typescript"
+  ],
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^6.2.0",
+    "eslint": "^9.39.1",
+    "tsdown": "^0.16.4"
+  }
+}

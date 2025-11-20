@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masker - 排除节点示例</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .container {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 300px;
+            position: relative;
+            background: #fafafa;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .item {
+            padding: 12px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+
+        .ad-banner {
+            padding: 20px;
+            margin: 10px 0;
+            background: #ffebee;
+            border: 2px dashed #f44336;
+            border-radius: 4px;
+            color: #c62828;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .sidebar {
+            padding: 15px;
+            margin: 10px 0;
+            background: #e3f2fd;
+            border: 2px dashed #2196f3;
+            border-radius: 4px;
+            color: #1565c0;
+        }
+
+        .info {
+            background: #f0f8ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .stats {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Masker - 排除节点示例</h1>
+
+    <div class="info">
+        <strong>功能说明：</strong><br>
+        - <code>excludeSelectors</code> 配置可以指定哪些节点不计入深度和数量统计<br>
+        - 支持 class（<code>.xxx</code>）、id（<code>#xxx</code>）等所有 CSS 选择器<br>
+        - 被排除的节点及其所有子节点都不会被计入统计<br>
+        - Loading 覆盖层本身会被自动排除
+    </div>
+
+    <section>
+        <h2>示例对比：排除 vs 不排除</h2>
+
+        <h3>场景 1：不排除广告和侧边栏</h3>
+        <p>当节点数达到 5 个时关闭（包含广告和侧边栏）</p>
+        <button onclick="demo1()">开始 - 不排除</button>
+        <button onclick="reset1()">重置</button>
+        <div id="stats1" class="stats"></div>
+        <div id="container1" class="container"></div>
+
+        <h3>场景 2：排除广告和侧边栏</h3>
+        <p>当节点数达到 5 个时关闭（排除广告和侧边栏，只统计真实内容）</p>
+        <button onclick="demo2()">开始 - 排除广告和侧边栏</button>
+        <button onclick="reset2()">重置</button>
+        <div id="stats2" class="stats"></div>
+        <div id="container2" class="container"></div>
+    </section>
+
+    <script type="module">
+        import { createMasker } from '../dist/index.mjs'
+
+        let masker1, masker2
+
+        function updateStats(containerId, statsId, currentCount) {
+            document.getElementById(statsId).textContent =
+                `当前统计节点数: ${currentCount} / 5`
+        }
+
+        // 示例 1: 不排除
+        window.demo1 = function () {
+            reset1()
+            const container = document.getElementById('container1')
+
+            masker1 = createMasker({
+                node: container,
+                minNodes: 5,  // 节点数达到 5 时关闭
+                maxDuration: 25000,
+                throttleDelay: 100,
+            })
+
+            masker1.show()
+
+            let count = 0
+
+            // 添加广告（会被计入统计）
+            setTimeout(() => {
+                const ad = document.createElement('div')
+                ad.className = 'ad-banner'
+                ad.textContent = '🎯 广告横幅（会被计入统计）'
+                container.appendChild(ad)
+                count++
+                updateStats('container1', 'stats1', count)
+            }, 500)
+
+            // 添加侧边栏（会被计入统计）
+            setTimeout(() => {
+                const sidebar = document.createElement('div')
+                sidebar.className = 'sidebar'
+                sidebar.id = 'sidebar'
+                sidebar.textContent = '📋 侧边栏（会被计入统计）'
+                container.appendChild(sidebar)
+                count++
+                updateStats('container1', 'stats1', count)
+            }, 1000)
+
+            // 添加真实内容
+            for (let i = 1; i <= 3; i++) {
+                setTimeout(() => {
+                    const item = document.createElement('div')
+                    item.className = 'item'
+                    item.textContent = `内容块 ${i}`
+                    container.appendChild(item)
+                    count++
+                    updateStats('container1', 'stats1', count)
+                }, 1000 + i * 500)
+            }
+        }
+
+        window.reset1 = function () {
+            if (masker1) masker1.destroy()
+            document.getElementById('container1').innerHTML = ''
+            document.getElementById('stats1').textContent = ''
+        }
+
+        // 示例 2: 排除广告和侧边栏
+        window.demo2 = function () {
+            reset2()
+            const container = document.getElementById('container2')
+
+            masker2 = createMasker({
+                node: container,
+                minNodes: 5,  // 节点数达到 5 时关闭
+                excludeSelectors: ['.ad-banner', '#sidebar'],  // 排除这些节点
+                throttleDelay: 100,
+            })
+
+            masker2.show()
+
+            let count = 1  // 容器本身
+
+            // 添加广告（不会被计入统计）
+            setTimeout(() => {
+                const ad = document.createElement('div')
+                ad.className = 'ad-banner'
+                ad.textContent = '🎯 广告横幅（已排除，不计入统计）'
+                container.appendChild(ad)
+                updateStats('container2', 'stats2', count)
+            }, 500)
+
+            // 添加侧边栏（不会被计入统计）
+            setTimeout(() => {
+                const sidebar = document.createElement('div')
+                sidebar.className = 'sidebar'
+                sidebar.id = 'sidebar'
+                sidebar.textContent = '📋 侧边栏（已排除，不计入统计）'
+                container.appendChild(sidebar)
+                updateStats('container2', 'stats2', count)
+            }, 1000)
+
+            // 添加真实内容（会被计入统计）
+            for (let i = 1; i <= 5; i++) {
+                setTimeout(() => {
+                    const item = document.createElement('div')
+                    item.className = 'item'
+                    item.textContent = `内容块 ${i}`
+                    container.appendChild(item)
+                    count++
+                    updateStats('container2', 'stats2', count)
+                }, 1000 + i * 500)
+            }
+        }
+
+        window.reset2 = function () {
+            if (masker2) masker2.destroy()
+            document.getElementById('container2').innerHTML = ''
+            document.getElementById('stats2').textContent = ''
+        }
+    </script>
+</body>
+
+</html>

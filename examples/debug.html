@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masker - 调试示例</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .container {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      min-height: 200px;
+      position: relative;
+      background: #fafafa;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .item {
+      padding: 12px;
+      margin: 8px 0;
+      background: white;
+      border-radius: 4px;
+      border-left: 3px solid #007bff;
+    }
+
+    .debug-info {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 15px;
+      margin: 20px 0;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .debug-info pre {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Masker - 调试示例</h1>
+  <p>这个示例用于验证 loading 覆盖层是否被正确排除</p>
+
+  <button onclick="startDebug()">开始测试</button>
+  <button onclick="reset()">重置</button>
+
+  <div id="debug" class="debug-info">
+    <strong>调试信息：</strong>
+    <pre id="log"></pre>
+  </div>
+
+  <div id="container" class="container"></div>
+
+  <script type="module">
+    import { createMasker } from '../dist/index.mjs'
+
+    let masker = null
+    const logEl = document.getElementById('log')
+
+    function log(msg) {
+      const timestamp = new Date().toLocaleTimeString()
+      logEl.textContent += `[${timestamp}] ${msg}\n`
+    }
+
+    window.reset = function() {
+      if (masker) {
+        masker.destroy()
+        masker = null
+      }
+      document.getElementById('container').innerHTML = ''
+      logEl.textContent = ''
+    }
+
+    window.startDebug = function() {
+      reset()
+      const container = document.getElementById('container')
+
+      log('开始测试...')
+      log(`初始容器子元素数量: ${container.children.length}`)
+
+      masker = createMasker({
+        node: container,
+        minNodes: 5,  // 需要 5 个节点（不包括 loading）
+        throttleDelay: 100,
+      })
+
+      masker.show()
+      
+      // 显示 loading 后，检查子元素
+      setTimeout(() => {
+        log(`显示 loading 后，容器子元素数量: ${container.children.length}`)
+        log(`loading 覆盖层类名: ${container.querySelector('[data-masker-overlay]')?.className || '未找到'}`)
+        
+        // 手动统计（包含 loading）
+        const allElements = container.querySelectorAll('*')
+        log(`所有子孙元素数量（包括 loading）: ${allElements.length}`)
+        
+        // 手动统计（不包含 loading）
+        const nonLoadingElements = Array.from(allElements).filter(el => 
+          !el.hasAttribute('data-masker-overlay') && !el.classList.contains('masker-overlay')
+        )
+        log(`非 loading 元素数量: ${nonLoadingElements.length}`)
+      }, 100)
+
+      // 逐步添加内容
+      for (let i = 1; i <= 5; i++) {
+        setTimeout(() => {
+          const item = document.createElement('div')
+          item.className = 'item'
+          item.textContent = `内容块 ${i}`
+          container.appendChild(item)
+          
+          log(`添加内容块 ${i}，容器子元素数量: ${container.children.length}`)
+          
+          // 统计非 loading 元素
+          const allElements = container.querySelectorAll('*')
+          const nonLoadingElements = Array.from(allElements).filter(el => 
+            !el.hasAttribute('data-masker-overlay') && 
+            !el.classList.contains('masker-overlay') &&
+            !el.classList.contains('masker-spinner')
+          )
+          log(`  → 非 loading 元素数量: ${nonLoadingElements.length + 1}`) // +1 是容器本身
+          
+          if (i === 5) {
+            setTimeout(() => {
+              log(`预期: Loading 应该在第 5 个内容块后关闭`)
+              log(`实际: Loading ${masker && container.querySelector('[data-masker-overlay]') ? '仍在显示' : '已关闭'} ✓`)
+            }, 200)
+          }
+        }, i * 600)
+      }
+    }
+  </script>
+</body>
+</html>
+

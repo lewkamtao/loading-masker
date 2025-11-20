@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masker - 基础示例</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .demo-container {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      min-height: 200px;
+      position: relative;
+    }
+
+    .controls {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .info {
+      background: #f0f8ff;
+      border-left: 4px solid #007bff;
+      padding: 15px;
+      margin: 20px 0;
+    }
+
+    .item {
+      padding: 10px;
+      margin: 5px 0;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <h1>Masker - 基础示例</h1>
+
+  <div class="info">
+    <strong>提示：</strong>点击按钮触发不同的场景，观察 Loading 如何根据条件自动关闭。
+  </div>
+
+  <!-- 示例 1: 基于节点数量 -->
+  <section>
+    <h2>示例 1: 基于节点数量</h2>
+    <p>当容器内的子节点达到 10 个时自动关闭 Loading</p>
+    <div class="controls">
+      <button onclick="startDemo1()">开始加载</button>
+      <button onclick="resetDemo1()">重置</button>
+    </div>
+    <div id="demo1" class="demo-container"></div>
+  </section>
+
+  <!-- 示例 2: 基于选择器 -->
+  <section>
+    <h2>示例 2: 基于选择器</h2>
+    <p>当 .header 和 .content 元素都出现时自动关闭 Loading</p>
+    <div class="controls">
+      <button onclick="startDemo2()">开始加载</button>
+      <button onclick="resetDemo2()">重置</button>
+    </div>
+    <div id="demo2" class="demo-container"></div>
+  </section>
+
+  <!-- 示例 3: 基于深度检测 -->
+  <section>
+    <h2>示例 3: 基于深度检测</h2>
+    <p>当 DOM 树深度达到 3 层时自动关闭 Loading</p>
+    <div class="controls">
+      <button onclick="startDemo3()">开始加载</button>
+      <button onclick="resetDemo3()">重置</button>
+    </div>
+    <div id="demo3" class="demo-container"></div>
+  </section>
+
+  <!-- 示例 4: 超时兜底 -->
+  <section>
+    <h2>示例 4: 超时兜底</h2>
+    <p>设置 3 秒超时，即使条件不满足也会强制关闭</p>
+    <div class="controls">
+      <button onclick="startDemo4()">开始加载</button>
+      <button onclick="resetDemo4()">重置</button>
+    </div>
+    <div id="demo4" class="demo-container"></div>
+  </section>
+
+  <script type="module">
+    // 引入真实的 masker 库
+    import { createMasker } from '../dist/index.mjs'
+
+    let masker1, masker2, masker3, masker4
+
+    // 示例 1: 基于节点数量
+    window.startDemo1 = function() {
+      resetDemo1()
+      const container = document.getElementById('demo1')
+      
+      masker1 = createMasker({
+        node: container,
+        minNodes: 10,  // 节点数达到 10 时自动关闭
+      })
+      
+      masker1.show()
+
+      // 模拟逐步添加节点
+      let count = 0
+      const interval = setInterval(() => {
+        if (count >= 10) {
+          clearInterval(interval)
+          return
+        }
+        const item = document.createElement('div')
+        item.className = 'item'
+        item.textContent = `节点 ${count + 1}`
+        container.appendChild(item)
+        count++
+      }, 300)
+    }
+
+    window.resetDemo1 = function() {
+      if (masker1) masker1.destroy()
+      document.getElementById('demo1').innerHTML = ''
+    }
+
+    // 示例 2: 基于选择器
+    window.startDemo2 = function() {
+      resetDemo2()
+      const container = document.getElementById('demo2')
+      
+      masker2 = createMasker({
+        node: container,
+        requiredSelectors: ['.header', '.content'],  // 必须存在的选择器
+      })
+      
+      masker2.show()
+
+      // 先添加 header
+      setTimeout(() => {
+        const header = document.createElement('div')
+        header.className = 'item header'
+        header.textContent = '✅ Header 已加载'
+        container.appendChild(header)
+      }, 500)
+
+      // 再添加 content (此时自动关闭)
+      setTimeout(() => {
+        const content = document.createElement('div')
+        content.className = 'item content'
+        content.textContent = '✅ Content 已加载'
+        container.appendChild(content)
+      }, 1500)
+    }
+
+    window.resetDemo2 = function() {
+      if (masker2) masker2.destroy()
+      document.getElementById('demo2').innerHTML = ''
+    }
+
+    // 示例 3: 基于深度检测
+    window.startDemo3 = function() {
+      resetDemo3()
+      const container = document.getElementById('demo3')
+      
+      masker3 = createMasker({
+        node: container,
+        maxDepth: 3,  // 深度达到 3 层时自动关闭
+      })
+      
+      masker3.show()
+
+      // 逐层构建嵌套结构
+      // 层级 1
+      setTimeout(() => {
+        const level1 = document.createElement('div')
+        level1.className = 'item'
+        level1.textContent = '📦 第 1 层'
+        container.appendChild(level1)
+        
+        // 层级 2
+        setTimeout(() => {
+          const level2 = document.createElement('div')
+          level2.className = 'item'
+          level2.style.marginLeft = '20px'
+          level2.textContent = '📦 第 2 层'
+          level1.appendChild(level2)
+          
+          // 层级 3 (此时深度达到 3，自动关闭)
+          setTimeout(() => {
+            const level3 = document.createElement('div')
+            level3.className = 'item'
+            level3.style.marginLeft = '20px'
+            level3.textContent = '📦 第 3 层 (深度达到，自动关闭！)'
+            level2.appendChild(level3)
+          }, 500)
+        }, 500)
+      }, 500)
+    }
+
+    window.resetDemo3 = function() {
+      if (masker3) masker3.destroy()
+      document.getElementById('demo3').innerHTML = ''
+    }
+
+    // 示例 4: 超时兜底
+    window.startDemo4 = function() {
+      resetDemo4()
+      const container = document.getElementById('demo4')
+      
+      masker4 = createMasker({
+        node: container,
+        minNodes: 999999,  // 永远不会满足的条件
+        maxDuration: 3000, // 3 秒后强制关闭
+        onTimeout: () => {
+          const msg = document.createElement('div')
+          msg.className = 'item warning'
+          msg.textContent = '⚠️ 超时兜底：已强制关闭 Loading'
+          container.appendChild(msg)
+        }
+      })
+      
+      masker4.show()
+    }
+
+    window.resetDemo4 = function() {
+      if (masker4) masker4.destroy()
+      document.getElementById('demo4').innerHTML = ''
+    }
+  </script>
+</body>
+</html>
+

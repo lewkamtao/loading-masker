@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masker - 简单示例</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .container {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 40px;
+      min-height: 300px;
+      position: relative;
+      background: #fafafa;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .item {
+      padding: 12px;
+      margin: 8px 0;
+      background: white;
+      border-radius: 4px;
+      border-left: 3px solid #007bff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Masker - 简单示例</h1>
+  <p>点击按钮查看不同的 Loading 效果</p>
+
+  <div>
+    <button onclick="demo1()">示例 1: 节点数量触发</button>
+    <button onclick="demo2()">示例 2: 深度检测</button>
+    <button onclick="demo3()">示例 3: 超时兜底</button>
+    <button onclick="demo4()">示例 4: 自定义 UI</button>
+    <button onclick="reset()">重置</button>
+  </div>
+
+  <div id="container" class="container"></div>
+
+  <script type="module">
+    import { createMasker } from '../dist/index.mjs'
+
+    let currentMasker = null
+
+    window.reset = function() {
+      if (currentMasker) {
+        currentMasker.destroy()
+        currentMasker = null
+      }
+      document.getElementById('container').innerHTML = ''
+    }
+
+    window.demo1 = function() {
+      reset()
+      const container = document.getElementById('container')
+
+      currentMasker = createMasker({
+        node: container,
+        minNodes: 5,  // 5 个节点时自动关闭
+      })
+
+      currentMasker.show()
+
+      // 逐步添加内容
+      let count = 0
+      const interval = setInterval(() => {
+        if (count >= 5) {
+          clearInterval(interval)
+          return
+        }
+        const item = document.createElement('div')
+        item.className = 'item'
+        item.textContent = `内容块 ${count + 1}`
+        container.appendChild(item)
+        count++
+      }, 500)
+    }
+
+    window.demo2 = function() {
+      reset()
+      const container = document.getElementById('container')
+
+      currentMasker = createMasker({
+        node: container,
+        maxDepth: 4,  // 深度达到 4 层时自动关闭
+      })
+
+      currentMasker.show()
+
+      // 构建嵌套结构
+      let current = container
+      for (let i = 1; i <= 4; i++) {
+        setTimeout(() => {
+          const div = document.createElement('div')
+          div.className = 'item'
+          div.style.marginLeft = (i - 1) * 15 + 'px'
+          div.textContent = `第 ${i} 层${i === 4 ? ' ✓ 深度达到，自动关闭！' : ''}`
+          current.appendChild(div)
+          current = div
+        }, i * 400)
+      }
+    }
+
+    window.demo3 = function() {
+      reset()
+      const container = document.getElementById('container')
+
+      currentMasker = createMasker({
+        node: container,
+        maxDuration: 2000,  // 2 秒后强制关闭
+        onTimeout: () => {
+          container.innerHTML = '<div class="item" style="border-left-color: #ffc107;">⚠️ 加载超时（2秒兜底）</div>'
+        }
+      })
+
+      currentMasker.show()
+    }
+
+    window.demo4 = function() {
+      reset()
+      const container = document.getElementById('container')
+
+      currentMasker = createMasker({
+        node: container,
+        maxDuration: 3000,
+        renderLoading: () => {
+          const div = document.createElement('div')
+          div.style.cssText = `
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+          `
+          div.innerHTML = `
+            <div style="margin-bottom: 20px;">🎨</div>
+            <div>自定义加载中...</div>
+          `
+          return div
+        }
+      })
+
+      currentMasker.show()
+    }
+  </script>
+</body>
+</html>
+
