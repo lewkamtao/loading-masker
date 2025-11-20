@@ -1,6 +1,6 @@
 {
   "name": "loading-masker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "A smart loading mask layer library with DOM-based auto-closing conditions",
   "type": "module",

@@ -8,10 +8,16 @@ export class Renderer {
   private overlay: HTMLElement | null = null
   private targetNode: HTMLElement
   private renderFn?: () => HTMLElement | string
+  private theme: 'light' | 'dark'
 
-  constructor(targetNode: HTMLElement, renderFn?: () => HTMLElement | string) {
+  constructor(
+    targetNode: HTMLElement,
+    renderFn?: () => HTMLElement | string,
+    theme: 'light' | 'dark' = 'light',
+  ) {
     this.targetNode = targetNode
     this.renderFn = renderFn
+    this.theme = theme
   }
 
   /**
@@ -67,7 +73,7 @@ export class Renderer {
     // 创建统一的容器，无论是默认还是自定义渲染都用这个容器包裹
     const container = document.createElement('div')
     container.id = 'masker-loading'
-    container.className = 'masker-overlay'
+    container.className = `masker-overlay masker-theme-${this.theme}`
     container.setAttribute('data-masker-overlay', 'true')
 
     // 创建内容

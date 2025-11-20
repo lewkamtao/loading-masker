@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>主题模式示例 - Loading Masker</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin-bottom: 30px;
+        color: #333;
+      }
+
+      .demo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .demo-box {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .demo-box h2 {
+        margin-bottom: 15px;
+        font-size: 18px;
+        color: #1a73e8;
+      }
+
+      .demo-content {
+        min-height: 200px;
+        background: #fafafa;
+        border-radius: 4px;
+        padding: 15px;
+        position: relative;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        background: #1a73e8;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: #1557b0;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .info {
+        background: #e3f2fd;
+        border-left: 4px solid #1a73e8;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+      }
+
+      .info h3 {
+        margin-bottom: 8px;
+        color: #1a73e8;
+      }
+
+      .info ul {
+        margin-left: 20px;
+      }
+
+      .info li {
+        margin: 5px 0;
+        color: #555;
+      }
+
+      code {
+        background: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎨 主题模式示例</h1>
+
+      <div class="info">
+        <h3>✨ 新功能说明</h3>
+        <ul>
+          <li><strong>防闪屏</strong>：添加了 <code>minDuration</code> 配置（默认 300ms），避免加载时间过短导致闪屏</li>
+          <li><strong>主题模式</strong>：添加了 <code>theme</code> 配置，可选 <code>light</code>（浅色）或 <code>dark</code>（深色）</li>
+          <li>浅色主题：白色半透明背景 + 蓝色加载图标</li>
+          <li>深色主题：黑色半透明背景 + 浅蓝色加载图标</li>
+        </ul>
+      </div>
+
+      <div class="demo-grid">
+        <!-- 浅色主题 -->
+        <div class="demo-box">
+          <h2>☀️ 浅色主题（Light）</h2>
+          <div class="demo-content" id="demo-light">
+            <p>这是演示内容区域</p>
+          </div>
+          <div class="controls">
+            <button onclick="testLight('fast')">快速加载（100ms）</button>
+            <button onclick="testLight('normal')">正常加载（1秒）</button>
+            <button onclick="testLight('slow')">慢速加载（3秒）</button>
+          </div>
+        </div>
+
+        <!-- 深色主题 -->
+        <div class="demo-box">
+          <h2>🌙 深色主题（Dark）</h2>
+          <div class="demo-content" id="demo-dark">
+            <p>这是演示内容区域</p>
+          </div>
+          <div class="controls">
+            <button onclick="testDark('fast')">快速加载（100ms）</button>
+            <button onclick="testDark('normal')">正常加载（1秒）</button>
+            <button onclick="testDark('slow')">慢速加载（3秒）</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info" style="background: #fff3e0; border-left-color: #ff9800;">
+        <h3>🔍 测试说明</h3>
+        <ul>
+          <li><strong>快速加载（100ms）</strong>：由于设置了最小显示时长 300ms，实际会显示 300ms，避免闪屏</li>
+          <li><strong>正常加载（1秒）</strong>：正常显示完整的 1 秒</li>
+          <li><strong>慢速加载（3秒）</strong>：显示 3 秒钟的加载状态</li>
+        </ul>
+      </div>
+    </div>
+
+    <script type="module">
+      import { createMasker } from '../src/index.ts'
+
+      // 浅色主题实例
+      const maskerLight = createMasker({
+        node: document.getElementById('demo-light'),
+        theme: 'light',
+        minDuration: 300, // 最小显示 300ms，防止闪屏
+        observe: false,
+      })
+
+      // 深色主题实例
+      const maskerDark = createMasker({
+        node: document.getElementById('demo-dark'),
+        theme: 'dark',
+        minDuration: 300, // 最小显示 300ms，防止闪屏
+        observe: false,
+      })
+
+      // 模拟异步加载
+      function simulateLoading(duration) {
+        return new Promise(resolve => setTimeout(resolve, duration))
+      }
+
+      // 测试浅色主题
+      window.testLight = async function (speed) {
+        const durations = { fast: 100, normal: 1000, slow: 3000 }
+        const duration = durations[speed]
+
+        maskerLight.show()
+        console.log(`[Light] 开始加载，预计 ${duration}ms`)
+
+        const startTime = Date.now()
+        await simulateLoading(duration)
+        
+        maskerLight.hide()
+        const actualTime = Date.now() - startTime
+        console.log(`[Light] 加载完成，实际显示时长: ${actualTime}ms`)
+      }
+
+      // 测试深色主题
+      window.testDark = async function (speed) {
+        const durations = { fast: 100, normal: 1000, slow: 3000 }
+        const duration = durations[speed]
+
+        maskerDark.show()
+        console.log(`[Dark] 开始加载，预计 ${duration}ms`)
+
+        const startTime = Date.now()
+        await simulateLoading(duration)
+        
+        maskerDark.hide()
+        const actualTime = Date.now() - startTime
+        console.log(`[Dark] 加载完成，实际显示时长: ${actualTime}ms`)
+      }
+    </script>
+  </body>
+</html>
+

@@ -114,6 +114,19 @@ export function injectDefaultStyles(): void {
       color: var(--masker-color, #1a73e8);
       z-index: 9999;
       pointer-events: auto;
+      transition: opacity 0.15s ease;
+    }
+
+    /* 浅色主题（默认） */
+    .masker-theme-light {
+      background: var(--masker-bg, rgba(255, 255, 255, 0.9));
+      color: var(--masker-color, #1a73e8);
+    }
+
+    /* 深色主题 */
+    .masker-theme-dark {
+      background: var(--masker-bg, rgba(0, 0, 0, 0.85));
+      color: var(--masker-color, #8ab4f8);
     }
 
     /* Material Design 风格的 spinner 容器 */
