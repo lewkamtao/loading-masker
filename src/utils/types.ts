@@ -20,6 +20,9 @@ export interface MaskerOptions {
   /** 自定义关闭判断 */
   customCheck?: (root: HTMLElement) => boolean
 
+  /** 最小显示时长（毫秒），避免闪屏（默认 300ms） */
+  minDuration?: number
+
   /** 最大显示时长（毫秒），达到后强制关闭（兜底机制） */
   maxDuration?: number
 
@@ -28,6 +31,9 @@ export interface MaskerOptions {
 
   /** 自定义 loading 渲染 */
   renderLoading?: () => HTMLElement | string
+
+  /** 主题模式：light 浅色、dark 深色（默认 light） */
+  theme?: 'light' | 'dark'
 
   /** 是否自动监听 DOM（默认 true） */
   observe?: boolean

@@ -15,13 +15,20 @@ class Masker implements MaskerInstance {
   private checker: Checker
   private observer: Observer | null = null
   private timeoutId: ReturnType<typeof setTimeout> | null = null
+  private showTimestamp: number = 0 // 记录显示时间戳
+  private minDuration: number // 最小显示时长
 
   constructor(options: MaskerOptions) {
     this.validateOptions(options)
     this.options = options
+    this.minDuration = options.minDuration ?? 300 // 默认 300ms
 
     // 初始化各模块
-    this.renderer = new Renderer(options.node, options.renderLoading)
+    this.renderer = new Renderer(
+      options.node,
+      options.renderLoading,
+      options.theme || 'light',
+    )
     this.checker = new Checker(options)
 
     // 如果开启观察，初始化 Observer
@@ -42,6 +49,9 @@ class Masker implements MaskerInstance {
       return // 幂等
     }
 
+    // 记录显示时间戳
+    this.showTimestamp = Date.now()
+
     this.renderer.show()
 
     // 启动观察器
@@ -61,11 +71,34 @@ class Masker implements MaskerInstance {
   }
 
   /**
-   * 隐藏 Loading 遮罩层
+   * 隐藏 Loading 遮罩层（支持最小显示时长）
    */
   hide(): void {
     if (!this.renderer.isVisible()) {
       return // 幂等
+    }
+
+    // 计算已经显示的时间
+    const elapsed = Date.now() - this.showTimestamp
+    const remaining = this.minDuration - elapsed
+
+    // 如果未达到最小显示时长，延迟隐藏
+    if (remaining > 0) {
+      setTimeout(() => {
+        this.performHide()
+      }, remaining)
+    }
+    else {
+      this.performHide()
+    }
+  }
+
+  /**
+   * 执行实际的隐藏操作
+   */
+  private performHide(): void {
+    if (!this.renderer.isVisible()) {
+      return // 避免重复隐藏
     }
 
     this.renderer.hide()
@@ -153,6 +186,11 @@ class Masker implements MaskerInstance {
       throw new RangeError('[Masker] options.minNodes must be >= 1')
     }
 
+    // minDuration 必须 >= 0
+    if (options.minDuration !== undefined && options.minDuration < 0) {
+      throw new RangeError('[Masker] options.minDuration must be >= 0')
+    }
+
     // maxDuration 必须 > 0
     if (options.maxDuration !== undefined && options.maxDuration <= 0) {
       throw new RangeError('[Masker] options.maxDuration must be > 0')
@@ -166,6 +204,11 @@ class Masker implements MaskerInstance {
     // throttleDelay 必须 >= 0
     if (options.throttleDelay !== undefined && options.throttleDelay < 0) {
       throw new RangeError('[Masker] options.throttleDelay must be >= 0')
+    }
+
+    // theme 必须是 'light' 或 'dark'
+    if (options.theme !== undefined && !['light', 'dark'].includes(options.theme)) {
+      throw new TypeError('[Masker] options.theme must be "light" or "dark"')
     }
   }
 }
